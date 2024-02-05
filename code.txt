@@ -1,0 +1,740 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Oct 31 21:55:30 2023
+
+@author: navaneethan
+"""
+
+import pickle
+import streamlit as st
+#loading the saved models
+
+parkinsons_model = pickle.load(open('C:/Users/navaneethan/Desktop/Parkinson disease Prediction/saved models/parkinsons_model.sav','rb'))
+
+from parkinsons_model import scaler, parkinsons_model
+# Parkinson's Prediction Page
+
+
+    # page title
+st.title("Parkinson's Disease Prediction using ML")
+    
+col1, col2, col3, col4, col5 = st.columns(5)  
+    
+with col1:
+    fo = st.text_input('MDVP:Fo(Hz)')
+        
+with col2:
+    fhi = st.text_input('MDVP:Fhi(Hz)')
+        
+with col3:
+    flo = st.text_input('MDVP:Flo(Hz)')
+        
+with col4:
+    Jitter_percent = st.text_input('MDVP:Jitter(%)')
+        
+with col5:
+    Jitter_Abs = st.text_input('MDVP:Jitter(Abs)')
+        
+with col1:
+    RAP = st.text_input('MDVP:RAP')
+        
+with col2:
+    PPQ = st.text_input('MDVP:PPQ')
+        
+with col3:
+    DDP = st.text_input('Jitter:DDP')
+        
+with col4:
+    Shimmer = st.text_input('MDVP:Shimmer')
+        
+with col5:
+    Shimmer_dB = st.text_input('MDVP:Shimmer(dB)')
+        
+with col1:
+    APQ3 = st.text_input('Shimmer:APQ3')
+        
+with col2:
+    APQ5 = st.text_input('Shimmer:APQ5')
+        
+with col3:
+    APQ = st.text_input('MDVP:APQ')
+        
+with col4:
+    DDA = st.text_input('Shimmer:DDA')
+        
+with col5:
+    NHR = st.text_input('NHR')
+        
+with col1:
+    HNR = st.text_input('HNR')
+        
+with col2:
+    RPDE = st.text_input('RPDE')
+        
+with col3:
+    DFA = st.text_input('DFA')
+        
+with col4:
+    spread1 = st.text_input('spread1')
+        
+with col5:
+    spread2 = st.text_input('spread2')
+        
+with col1:
+    D2 = st.text_input('D2')
+        
+with col2:
+    PPE = st.text_input('PPE')
+        
+    
+    
+    # code for Prediction
+parkinsons_diagnosis = ''
+    
+    # creating a button for Prediction    
+if st.button("Parkinson's Test Result"):
+    # Standardize the input data using the scaler
+    #std_input_features = scaler.transform([input_features])
+    
+    #parkinsons_prediction = parkinsons_model.predict([[fo, fhi, flo, Jitter_percent, Jitter_Abs, RAP, PPQ,DDP,Shimmer,Shimmer_dB,APQ3,APQ5,APQ,DDA,NHR,HNR,RPDE,DFA,spread1,spread2,D2,PPE]])                          
+    
+    
+    # Create a list or NumPy array with the input features (replace the placeholders with actual values)
+    input_features = [fo, fhi, flo, Jitter_percent, Jitter_Abs, RAP, PPQ, DDP, Shimmer, Shimmer_dB, APQ3, APQ5, APQ, DDA, NHR, HNR, RPDE, DFA, spread1, spread2, D2, PPE]
+
+# Standardize the input data using the scaler
+    std_input_features = scaler.transform([input_features])
+
+# Make the prediction using the standardized input
+    parkinsons_prediction = parkinsons_model.predict(std_input_features)
+    
+    
+    if (parkinsons_prediction[0] == 1):
+        parkinsons_diagnosis = "The person has Parkinson's disease"
+    else:
+        parkinsons_diagnosis = "The person does not have Parkinson's disease"
+        
+st.success(parkinsons_diagnosis)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# firstly, we install package and extensions
+!pip install lux-api
+!jupyter nbextension install --py luxwidget
+!jupyter nbextension enable --py luxwidget
+
+#Make necessary imports
+import warnings
+warnings.filterwarnings ("ignore")
+import numpy as np
+import pandas as pd
+import os, sys
+import lux
+from sklearn.preprocessing import MinMaxScaler
+from xgboost import XGBClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+
+# Load the dataset
+df = pd.read_csv('/content/parkinsons.csv')
+
+df.head(n=10)
+
+df.shape
+
+#find null values in the data set
+df.isnull().sum()
+df.dtypes
+#Finding Unique values in the columns
+for i in df.columns:
+  print("*************",i,"******************")
+  print()
+  print(set (df[i].tolist()))
+  print()
+
+df["status"].value_counts()
+
+#Check Label Imbalance
+import matplotlib.pyplot as plt
+import seaborn as sns
+temp=df["status"].value_counts()
+temp_df= pd.DataFrame({'status': temp.index, 'values': temp.values})
+print (sns.barplot (x = 'status', y="values", data=temp_df))
+
+sns.pairplot (df)
+# Find the distribution of data
+def distplots(col):
+    sns.distplot (df[col])
+    plt.show()
+for i in list(df.columns) [1:]:
+    distplots(i)
+# Find the distribution of data
+def boxplots (col):
+    sns.boxplot (df[col])
+    plt. show()
+for i in list(df.select_dtypes (exclude=["object"]).columns) [1:]:
+    boxplots (i)
+
+# Lets make some final changes to the data
+# Seperate independent and dependent variables and drop the ID column
+x=df.drop(["status", "name"], axis=1)
+y=df["status"]
+
+# Lets detect the Label balance
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
+from collections import Counter
+print (Counter (y))
+
+#Lets balance the labels.
+ros= RandomOverSampler ()
+x_ros, y_ros = ros.fit_resample(x, y)
+print (Counter (y_ros))
+
+#Initialize a MinMaxScaler and scale the features to between -1 and 1 to normalize them.
+#The MinMaxScaler transforms features by scaling them to a given range.
+#The fit_transform() method fits to the data and then transforms it. We don't need to scale the labels.
+#Scale the features to between -1 and 1
+# Scaling is important in the algorithms such as support vector machines (SVM) and k-nearest neighbors (KNN) where distance
+# between the data points is important.
+scaler=MinMaxScaler ((-1,1))
+x=scaler.fit_transform(x_ros)
+y=y_ros
+
+# Applying Feature Engineering
+# Applying PCA
+# The code below has .95 for the number of components parameter.
+# It means that scikit-learn choose the minimum number of principal components such that 95% of the variance is retained.
+from sklearn.decomposition import PCA
+pca = PCA(n_components=22)
+X_PCA=pca.fit_transform(x)
+print(x.shape)
+print (X_PCA.shape)
+#Now, split the dataset into training and testing sets keeping 20% of the data for testing.
+#Split the dataset
+x_train,x_test,y_train,y_test=train_test_split(x, y, test_size=0.2, random_state=7)
+
+# Applying Algorithm
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
+list_met=[]
+list_accuracy=[]
+
+# Applying all the algorithms I
+#Apply Logistic Regression
+from sklearn. linear_model import LogisticRegression
+classifier = LogisticRegression (C=0.4, max_iter=1000, solver='liblinear')
+lr =classifier.fit(x_train, y_train)
+#Preciction
+y_pred= classifier.predict(x_test)
+#Accuracy
+accuracy_LR= accuracy_score(y_test, y_pred)
+
+
+#Apply Decison Tree
+from sklearn.tree import DecisionTreeClassifier
+classifier2 = DecisionTreeClassifier(random_state=14)
+dt=classifier2.fit(x_train, y_train)
+#Preciction
+y_pred2=classifier2.predict(x_test)
+#Accuracy
+accuracy_DT= accuracy_score(y_test, y_pred2)
+
+#Apply Random Forest criteria-information gain
+from sklearn.ensemble import RandomForestClassifier
+classifier3= RandomForestClassifier (random_state=14)
+rfi=classifier3. fit(x_train, y_train)
+#Preciction
+y_pred3= classifier3.predict(x_test)
+#Accuracy
+accuracy_RFI= accuracy_score(y_test, y_pred3)
+
+
+# Apply Random Forest criteria-entropy
+from sklearn.ensemble import RandomForestClassifier
+classifier4 = RandomForestClassifier (criterion='entropy')
+rfe=classifier4.fit(x_train, y_train)
+#Preciction
+y_pred4 = classifier4.predict(x_test)
+#Accuracy
+accuracy_RFE= accuracy_score(y_test, y_pred4)
+
+
+
+# similarly apply SVM
+from sklearn.svm import SVC
+model_svm = SVC(cache_size=100)
+svm=model_svm.fit(x_train, y_train)
+#Preciction
+y_preds=model_svm. predict (x_test)
+#Accuracy
+accuracy_svc= accuracy_score(y_test, y_preds)
+
+
+# Apply KNN
+from sklearn.neighbors import KNeighborsClassifier
+model_knn3 = KNeighborsClassifier (n_neighbors=3)
+knn =model_knn3.fit(x_train,y_train)
+#Predicting Test Set N=3
+pred_knn3= model_knn3.predict(x_test)
+#Accuracy
+accuracy_SVM = accuracy_score(y_test, pred_knn3)
+
+
+
+#Apply Gaussian Naive Bayes
+from sklearn.naive_bayes import GaussianNB
+gnb=GaussianNB ()
+gnb=gnb.fit(x_train, y_train)
+# Predicting Test Set
+pred_gnb= gnb.predict(x_test)
+#accuracy
+accuracy_GNB = accuracy_score(y_test, pred_gnb)
+
+#Apply Bernoulli Naive Bayes
+from sklearn.naive_bayes import BernoulliNB
+model = BernoulliNB ()
+bnb=model.fit(x_train, y_train)
+# Predicting Test Set
+pred_bnb = model.predict(x_test)
+#accuracy
+accuracy_BNB = accuracy_score(y_test, pred_bnb)
+
+
+
+# Combining all the above using voting classifier
+from sklearn.ensemble import VotingClassifier
+evc=VotingClassifier(estimators=[('lr', lr), ('rfi', rfi), ('rfe', rfe), ('DT',dt),('svm', svm), ('knn', knn), ('gnb' ,gnb), ('bnb', bnb)], voting='hard',
+flatten_transform=True)
+model_evc=evc.fit(x_train, y_train)
+# Predicting Test Set
+pred_evc = evc.predict (x_test)
+#accuracy
+accuracy_evc = accuracy_score(y_test, pred_gnb)
+list1=['Logistic Regression', 'Decison Tree', 'Random Forest(information gain)', 'Random Forest (Entropy)', 'SVM', 'KNN', 'gnb', 'bnb', 'v']
+list2= [accuracy_LR, accuracy_DT, accuracy_RFI, accuracy_RFE, accuracy_svc, accuracy_SVM, accuracy_GNB, accuracy_BNB, accuracy_evc]
+list3=[classifier, classifier2, classifier3, classifier4,model_svm, model_knn3,gnb, model]
+df_Accuracy=pd.DataFrame({'Method Used':list1, 'Accuracy': list2})
+print (df_Accuracy)
+chart=sns.barplot (x='Method Used',y='Accuracy', data=df_Accuracy)
+chart.set_xticklabels(chart.get_xticklabels(), rotation=90)
+print(chart)
+
+
+#Initialize an XGBClassifier and train the model.
+#This classifies using extreme Gradient Boosting- using gradient boosting algorithms for modern data science problems.
+#It falls under the category of Ensemble Learning in ML,
+#where we train and predict using many models to produce one superior output.
+#Train the model
+model_xg=XGBClassifier()
+model_xg.fit(x_train,y_train)
+
+#Finally, generate y pred (predicted values for x_test) and calculate the accuracy for the model.
+#Print it out.
+#Calculate the accuracy
+y_pred-model_xg.predict(x_test)
+print (accuracy_score(y_test, y_pred)*100)
+
+
+from sklearn.metrics import confusion_matrix
+cm = confusion_matrix(y_test, model_xg.predict(x_test))
+
+
+
+from sklearn.metrics import f1_score
+f1_score(y_test, model_xg.predict (x_test), average='binary')
+
+
+from sklearn.metrics import roc_curve, auc, confusion_matrix, classification_report, accuracy_score
+print(classification_report (y_test, model_xg.predict(x_test)))
+print('Confusion Matrix:')
+print (cm)
+
+for i in list3:
+    print("****** *********** ",i," ** *********")
+    print (classification_report (y_test, i.predict(x_test)))
+    print('Confusion Matrix:')
+    print (cm)
+    print()
+
+# Visualizing performance with ROC
+from sklearn.metrics import roc_curve, auc, confusion_matrix, classification_report, accuracy_score
+def plot_roc(model, X_test, y_test):
+# calculate the fpr and tpr for all thresholds of the classification
+    probabilities = model.predict_proba(np.array(x_test))
+    predictions= probabilities
+    fpr, tpr, threshold = roc_curve(y_test, predictions[:,1])
+    roc_auc=auc(fpr, tpr)
+    plt.title('Receiver Operating Characteristic')
+    plt.plot(fpr, tpr, 'b', label='AUC = %0.2f' % roc_auc)
+    plt.legend (loc='lower right')
+    plt.plot([0, 1], [0, 1], 'r-')
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.show()
+
+# plot_roc(model_xg, x_test, y_test)
+
+# plot_roc(model_xg, x_test, y_test, loc='lower right')
+plot_roc(model_xg, x_test, y_test)
+
+
+for i in range(0, len(list3)):
+  try:
+    print()
+    print(".. ---ROC FOR ",list1[i],"+ PCA -")
+    plot_roc(list3[i], x_test, np.array(y_test))
+    print()
+  except:
+    print("roc not valid")
+
+import numpy as np
+
+input_data = (199.22800,209.51200,192.09100,0.00241,0.00001,0.00134,0.00138,0.00402,0.01015,0.08900,0.00504,0.00641,0.00762,0.01513,0.00167,30.94000,0.432439,0.742055,-7.682587,0.173319,2.103106,0.068501)
+
+# changing input data to a numpy array
+input_data_as_numpy_array = np.asarray(input_data)
+
+# reshape the numpy array
+input_data_reshaped = input_data_as_numpy_array.reshape(1,-1)
+
+# # standardize the data
+# std_data = scaler.transform(input_data_reshaped)
+
+
+# # prediction1 = model1.predict(std_data)
+# # prediction2 = model2.predict(std_data)
+
+# prediction_rf = rfc.predict(std_data)
+
+# print(prediction_rf)
+
+
+
+# if (prediction_rf[0] == 0):
+#   print("The Person does not have Parkinsons Disease")
+
+# else:
+#   print("The Person has Parkinsons")
+
+# standardize the data
+std_data = scaler.transform(input_data_reshaped)
+
+
+# Logistic Regression
+prediction_lr = classifier.predict(std_data)
+
+# Decision Tree
+prediction_dt = classifier2.predict(std_data)
+
+# Random Forest (Information Gain)
+prediction_rfi = classifier3.predict(std_data)
+
+# Random Forest (Entropy)
+prediction_rfe = classifier4.predict(std_data)
+
+# SVM
+prediction_svm = model_svm.predict(std_data)
+
+# KNN
+prediction_knn = model_knn3.predict(std_data)
+
+# Gaussian Naive Bayes
+prediction_gnb = gnb.predict(std_data)
+
+# Bernoulli Naive Bayes
+prediction_bnb = model.predict(std_data)
+
+# Voting Classifier
+prediction_evc = evc.predict(std_data)
+
+# Print the predictions for each model
+print("Logistic Regression:", prediction_lr)
+print("Decision Tree:", prediction_dt)
+print("Random Forest (Information Gain):", prediction_rfi)
+print("Random Forest (Entropy):", prediction_rfe)
+print("SVM:", prediction_svm)
+print("KNN:", prediction_knn)
+print("Gaussian Naive Bayes:", prediction_gnb)
+print("Bernoulli Naive Bayes:", prediction_bnb)
+print("Voting Classifier:", prediction_evc)
+
+if (prediction_knn[0] == 0):
+  print("The Person does not have Parkinsons Disease")
+
+else:
+  print("The Person has Parkinsons")
+
+import pickle
+filename = 'parkinsons_model.sav'
+pickle.dump(model_knn3, open(filename, 'wb'))
+# loading the saved model
+loaded_model = pickle.load(open('parkinsons_model.sav', 'rb'))
+
+for column in df.columns:
+  print(column)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Import necessary libraries
+import streamlit as st
+import numpy as np
+import pickle
+from sklearn.preprocessing import StandardScaler
+
+# Load the saved model
+loaded_model = pickle.load(open('C:/Users/navaneethan/Desktop/Parkinson disease Prediction/saved models/parkinsons_model.sav', 'rb'))
+
+# Set the page title and icon
+st.set_page_config(page_title="Parkinson's Disease Prediction", page_icon="✅")
+
+# Add input fields for user to enter feature values
+st.title("Parkinson's Disease Prediction")
+st.write("Please enter the feature values for prediction:")
+
+# Input fields for the user
+fo = st.text_input('MDVP:Fo(Hz)')
+fhi = st.text_input('MDVP:Fhi(Hz)')
+flo = st.text_input('MDVP:Flo(Hz)')
+jitter_percent = st.text_input('MDVP:Jitter(%)')
+jitter_abs = st.text_input('MDVP:Jitter(Abs)')
+rap = st.text_input('MDVP:RAP')
+ppq = st.text_input('MDVP:PPQ')
+ddp = st.text_input('Jitter:DDP')
+shimmer = st.text_input('MDVP:Shimmer')
+shimmer_db = st.text_input('MDVP:Shimmer(dB)')
+apq3 = st.text_input('Shimmer:APQ3')
+apq5 = st.text_input('Shimmer:APQ5')
+apq = st.text_input('MDVP:APQ')
+dda = st.text_input('Shimmer:DDA')
+nhr = st.text_input('NHR')
+hnr = st.text_input('HNR')
+rpde = st.text_input('RPDE')
+dfa = st.text_input('DFA')
+spread1 = st.text_input('spread1')
+spread2 = st.text_input('spread2')
+d2 = st.text_input('D2')
+ppe = st.text_input('PPE')
+
+# Button to make predictions
+if st.button("Predict"):
+    # Convert input data to float
+    fo = float(fo)
+    fhi = float(fhi)
+    flo = float(flo)
+    jitter_percent = float(jitter_percent)
+    jitter_abs = float(jitter_abs)
+    rap = float(rap)
+    ppq = float(ppq)
+    ddp = float(ddp)
+    shimmer = float(shimmer)
+    shimmer_db = float(shimmer_db)
+    apq3 = float(apq3)
+    apq5 = float(apq5)
+    apq = float(apq)
+    dda = float(dda)
+    nhr = float(nhr)
+    hnr = float(hnr)
+    rpde = float(rpde)
+    dfa = float(dfa)
+    spread1 = float(spread1)
+    spread2 = float(spread2)
+    d2 = float(d2)
+    ppe = float(ppe)
+
+    # Create an array with the input data
+    input_data = [fo, fhi, flo, jitter_percent, jitter_abs, rap, ppq, ddp, shimmer, shimmer_db, apq3, apq5, apq, dda, nhr, hnr, rpde, dfa, spread1, spread2, d2, ppe]
+
+    # Scale the input data using StandardScaler
+    scaler = StandardScaler()
+    input_data_scaled = scaler.fit_transform(np.array(input_data).reshape(1, -1))
+
+    # Use the loaded model to make predictions
+    prediction = loaded_model.predict(input_data_scaled)
+
+    # Display the prediction result
+    if prediction[0] == 0:
+        st.write("The Person does not have Parkinson's Disease")
+    else:
+        st.write("The Person has Parkinson's")
+
+# Run the app
+if __name__ == "__main__":
+    st.markdown(
+        """
+        This is a web app for predicting Parkinson's disease based on your input features.
+        """
+    )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Import necessary libraries
+import streamlit as st
+import numpy as np
+import pickle
+from sklearn.preprocessing import StandardScaler
+
+# Load the saved model
+loaded_model = pickle.load(open('C:/Users/navaneethan/Desktop/Parkinson disease Prediction/saved models/parkinsons_model.sav', 'rb'))
+
+# Set the page title and icon
+st.set_page_config(page_title="Parkinson's Disease Prediction", page_icon="✅")
+
+# Add input fields for user to enter feature values
+st.title("Parkinson's Disease Prediction")
+st.write("Please enter the feature values for prediction:")
+
+# Input fields for the user
+fo = st.text_input('MDVP:Fo(Hz)')
+fhi = st.text_input('MDVP:Fhi(Hz)')
+flo = st.text_input('MDVP:Flo(Hz)')
+jitter_percent = st.text_input('MDVP:Jitter(%)')
+jitter_abs = st.text_input('MDVP:Jitter(Abs)')
+rap = st.text_input('MDVP:RAP')
+ppq = st.text_input('MDVP:PPQ')
+ddp = st.text_input('Jitter:DDP')
+shimmer = st.text_input('MDVP:Shimmer')
+shimmer_db = st.text_input('MDVP:Shimmer(dB)')
+apq3 = st.text_input('Shimmer:APQ3')
+apq5 = st.text_input('Shimmer:APQ5')
+apq = st.text_input('MDVP:APQ')
+dda = st.text_input('Shimmer:DDA')
+nhr = st.text_input('NHR')
+hnr = st.text_input('HNR')
+rpde = st.text_input('RPDE')
+dfa = st.text_input('DFA')
+spread1 = st.text_input('spread1')
+spread2 = st.text_input('spread2')
+d2 = st.text_input('D2')
+ppe = st.text_input('PPE')
+
+# Button to make predictions
+if st.button("Predict"):
+    # Convert input data to float
+    #fo = float(fo)
+    
+
+    # Create an array with the input data
+    input_data = [fo, fhi, flo, jitter_percent, jitter_abs, rap, ppq, ddp, shimmer, shimmer_db, apq3, apq5, apq, dda, nhr, hnr, rpde, dfa, spread1, spread2, d2, ppe]
+    input_data_as_numpy_array = np.asarray(input_data)
+    input_data_reshaped = input_data_as_numpy_array.reshape(1,-1)
+    scaler = StandardScaler()
+    std_data = scaler.fit_transform(input_data_reshaped)
+    
+    # Scale the input data using StandardScaler
+    #input_data_scaled = scaler.transform(np.array(input_data).reshape(1, -1))
+
+    # Use the loaded model to make predictions
+    prediction = loaded_model.predict(std_data)
+
+    # Display the prediction result
+    if prediction[0] == 0:
+        st.write("The Person does not have Parkinson's Disease")
+    else:
+        st.write("The Person has Parkinson's")
+
+# Run the app
+if __name__ == "__main__":
+    st.markdown(
+        """
+        This is a web app for predicting Parkinson's disease based on your input features.
+        """
+    )

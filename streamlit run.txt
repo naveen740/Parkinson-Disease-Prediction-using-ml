@@ -1,0 +1,17 @@
+streamlit run "C:/Users/navaneethan/Desktop/Parkinson disease Prediction/parkinson.py"
+
+
+
+streamlit run "C:/Users/navaneethan/Desktop/Multiple disease prediction/multiple disease pred.py"
+
+
+streamlit run "D:/MCA WORK/mini project/new knn model/parkinson.py"
+
+D:/MCA WORK/mini project/new knn model
+
+
+streamlit run "C:/Users/navaneethan/Desktop/newpark/park-dis.py"
+
+C:\Users\navaneethan\Desktop\newpark
+
+streamlit run "C:\Users\navaneethan\Desktop\mini project\Parkinson disease Prediction\app.py"
